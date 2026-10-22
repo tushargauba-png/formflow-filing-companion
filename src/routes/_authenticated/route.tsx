@@ -8,6 +8,12 @@ export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async () => {
     const { data } = await supabase.auth.getUser();
     if (!data.user) throw redirect({ to: "/auth" });
+    // Signed in is not enough: the email must be on the allowed_users list (enforced again by RLS).
+    const { data: allowed, error } = await supabase.rpc("is_allowed_user");
+    if (error || !allowed) {
+      await supabase.auth.signOut();
+      throw redirect({ to: "/auth", search: { denied: true } });
+    }
     return { user: data.user };
   },
   component: Shell,

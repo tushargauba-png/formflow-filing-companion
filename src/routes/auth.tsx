@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search: Record<string, unknown>): { denied?: boolean } =>
+    search["denied"] === true || search["denied"] === "true" ? { denied: true } : {},
   head: () => ({
     meta: [
       { title: "Sign in — Form 146 Desk" },
@@ -23,7 +25,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"in" | "up">("in");
+  const { denied } = Route.useSearch();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -43,18 +45,9 @@ function AuthPage() {
     e.preventDefault();
     setBusy(true);
     try {
-      if (mode === "in") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        navigate({ to: "/dashboard" });
-      } else {
-        const { error } = await supabase.auth.signUp({
-          email, password, options: { emailRedirectTo: window.location.origin },
-        });
-        if (error) throw error;
-        toast.success("Check your email to confirm your account.");
-        setMode("in");
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      navigate({ to: "/dashboard" });
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -76,7 +69,12 @@ function AuthPage() {
       </div>
       <div className="flex items-center justify-center p-8">
         <form onSubmit={submit} className="w-full max-w-sm space-y-5">
-          <h2 className="text-3xl">{mode === "in" ? "Sign in" : "Create account"}</h2>
+          <h2 className="text-3xl">Sign in</h2>
+          {denied && (
+            <p role="alert" className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
+              This account is not authorised to use Form 146 Desk. Ask the administrator to add your email.
+            </p>
+          )}
           <Button type="button" variant="outline" className="w-full" disabled={busy} onClick={googleSignIn}>
             <span aria-hidden="true" className="mr-2 font-semibold">G</span> Continue with Google
           </Button>
@@ -89,12 +87,9 @@ function AuthPage() {
             <Input id="pw" type="password" required minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
           </div>
           <Button type="submit" className="w-full" disabled={busy}>
-            {busy ? "Please wait…" : mode === "in" ? "Sign in" : "Create account"}
+            {busy ? "Please wait…" : "Sign in"}
           </Button>
-          <Button variant="link" type="button" className="px-0 text-sm text-muted-foreground"
-            onClick={() => setMode(mode === "in" ? "up" : "in")}>
-            {mode === "in" ? "No account yet? Create one" : "Have an account? Sign in"}
-          </Button>
+          <p className="text-sm text-muted-foreground">Access is by invitation only.</p>
         </form>
       </div>
     </div>
