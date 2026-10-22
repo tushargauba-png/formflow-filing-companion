@@ -1,3 +1,4 @@
+import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
@@ -6,7 +7,7 @@ import { STATUSES } from "@/lib/form-fields";
 import { PageHeader, StatusBadge, fmtDate, fmtNum } from "@/components/ui-bits";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
-  head: () => ({ meta: [{ title: "Dashboard — Form 146 Desk" }] }),
+  head: () => pageMeta("Dashboard", "Monitor Form 146 work, filings, pending UDIN and billing."),
   loader: ({ context }) => context.queryClient.ensureQueryData(formsQuery()),
   component: Dashboard,
 });

@@ -1,3 +1,4 @@
+import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -11,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export const Route = createFileRoute("/_authenticated/forms/")({
-  head: () => ({ meta: [{ title: "Form 146 register — Form 146 Desk" }] }),
+  head: () => pageMeta("Form 146 register", "Track certificates, filings, UDIN and billing for all Form 146 records."),
   loader: ({ context }) => context.queryClient.ensureQueryData(formsQuery()),
   component: Register,
 });
@@ -34,7 +35,7 @@ function Register() {
   });
 
   async function copyForm(id: string) {
-    const src = forms.find((f) => f.id === id)!;
+    const src = forms.find((f) => f.id === id); if (!src) return;
     const { remitter: _r, remittee: _e, ...plain } = src;
     const { data, error } = await supabase.from("forms").insert(buildCopy(plain) as never).select("id").single();
     if (error) { toast.error(error.message); return; }
@@ -56,7 +57,7 @@ function Register() {
           <option value="">All statuses</option>{STATUSES.map((s) => <option key={s}>{s}</option>)}
         </select>
         <select className="h-9 rounded-md border bg-card px-3 text-sm" value={fy} onChange={(e) => setFy(e.target.value)}>
-          <option value="">All years</option>{years.map((y) => <option key={y!}>{y}</option>)}
+          <option value="">All years</option>{years.map((y) => <option key={y ?? ""}>{y}</option>)}
         </select>
         <span className="self-center text-sm text-muted-foreground">{rows.length} of {forms.length}</span>
       </div>

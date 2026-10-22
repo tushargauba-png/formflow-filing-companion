@@ -1,11 +1,14 @@
+import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Eye, Paperclip, Trash2 } from "lucide-react";
+import { Calculator, Eye, Paperclip, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formQuery, formsQuery, remitteesQuery, remittersQuery } from "@/lib/queries";
-import { FORM_SECTIONS, buildCopy, type Form } from "@/lib/form-fields";
+import { FORM_SECTIONS, buildCopy, type Form, type FieldDef } from "@/lib/form-fields";
+import { REMITTER_FIELDS, REMITTEE_FIELDS } from "@/lib/portal-fields";
+import { applyMaster, applyCalculation, matchingForms, partyDetails, fieldValue, setField, detailsOf } from "@/lib/form-calculations";
 import { PageHeader } from "@/components/ui-bits";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/_authenticated/forms/$id")({
-  head: () => ({ meta: [{ title: "Edit Form 146 — Form 146 Desk" }] }),
+  head: () => pageMeta("Edit Form 146", "Prepare Form 146 with party details, remittance calculations and tax certification fields."),
   loader: async ({ context, params }) => {
     await Promise.all([
       context.queryClient.ensureQueryData(remittersQuery()),
@@ -41,24 +44,44 @@ function FormEditor() {
   const existing = useQuery({ ...formQuery(id), enabled: !isNew });
   const [f, setF] = useState<Partial<Form>>({});
   const [saving, setSaving] = useState(false);
+  const [previousId, setPreviousId] = useState("");
+  const [autoCalculate, setAutoCalculate] = useState(false);
 
   useEffect(() => {
     if (isNew) setF({ status: "Draft", fy: currentFy(), start_date: new Date().toISOString().slice(0, 10), invoicing_status: "Not invoiced", payment_status: "Not applicable", is_revised: false });
     else if (existing.data) { const { remitter: _a, remittee: _b, ...rest } = existing.data; setF(rest); }
   }, [isNew, existing.data]);
 
-  const set = (k: keyof Form, v: unknown) => setF((p) => ({ ...p, [k]: v }));
+  const set = (k: string, v: string | number | boolean | null) => setF((p) => {
+    const next = setField(p, k, v);
+    if (autoCalculate && ["amount_fc", "exchange_rate", "tds_rate", "portal.gross_up"].includes(k)) {
+      try { return applyCalculation(next); } catch { return next; }
+    }
+    return next;
+  });
+  const candidates = matchingForms(allForms, f.remitter_id, f.remittee_id).filter(x => x.id !== id);
 
   function copyFrom(srcId: string) {
-    const src = allForms.find((x) => x.id === srcId); if (!src) return;
+    const src = candidates.find((x) => x.id === srcId); if (!src) return;
     const { remitter: _a, remittee: _b, ...plain } = src;
-    setF((p) => ({ ...p, ...buildCopy(plain), fy: p.fy ?? null, start_date: p.start_date ?? null }));
+    const copied = buildCopy(plain);
+    const snap = { ...detailsOf(copied), ...(plain.remittee_tin ? { remittee_tin: plain.remittee_tin } : {}) };
+    const remitterMaster = remitters.find(r => r.id === src.remitter_id);
+    const remitteeMaster = remittees.find(r => r.id === src.remittee_id);
+    const masterFallback = applyMaster(applyMaster(copied, "remitter", remitterMaster), "remittee", remitteeMaster);
+    setF((p) => ({ ...copied, fy: p.fy ?? null, start_date: p.start_date ?? null, portal_details: { ...detailsOf(masterFallback), ...snap } }));
+    setPreviousId(srcId); setAutoCalculate(false);
     toast.success("Details copied — update what changed");
   }
 
   async function save() {
+    if (!f.remitter_id || !f.remittee_id) { toast.error("Select a remitter and remittee first."); return; }
     setSaving(true);
-    const payload = { ...f };
+    let payload = { ...f };
+    if (autoCalculate) {
+      try { payload = applyCalculation(payload); setF(payload); }
+      catch (error) { setSaving(false); toast.error((error as Error).message); return; }
+    }
     delete payload.id; delete payload.created_at; delete payload.updated_at;
     const res = isNew
       ? await supabase.from("forms").insert(payload as never).select("id").single()
@@ -79,9 +102,21 @@ function FormEditor() {
   }
 
   const remittee = remittees.find((r) => r.id === f.remittee_id);
-  function pullFromRemittee() {
-    if (!remittee) return;
-    setF((p) => ({ ...p, nature_of_remittance: p.nature_of_remittance || remittee.nature_of_remittance, purpose_code: p.purpose_code || remittee.purpose_code, dtaa_article: p.dtaa_article || remittee.dtaa_article, remittee_tin: p.remittee_tin || remittee.tin }));
+  const remitter = remitters.find(r => r.id === f.remitter_id);
+  function chooseParty(party: "remitter" | "remittee", masterId: string) {
+    setPreviousId("");
+    setF(p => applyMaster({ ...p, copied_from: null }, party, party === "remitter" ? remitters.find(r => r.id === masterId) : remittees.find(r => r.id === masterId)));
+  }
+  function calculate() {
+    try { setF(applyCalculation(f)); } catch (error) { toast.error((error as Error).message); }
+  }
+
+  function control(fd: FieldDef, value: string | number | boolean | null | undefined, update: (v: string | number | boolean | null) => void) {
+    const fieldId = `field-${fd.key}`;
+    if (fd.type === "select") return <select id={fieldId} aria-label={fd.label} className="h-9 w-full min-w-0 rounded-md border bg-card px-3 text-sm" value={String(value ?? "")} onChange={e => update(e.target.value || null)}><option value="">—</option>{value && !fd.options?.includes(String(value)) && <option value={String(value)}>{String(value)}</option>}{fd.options?.map(o => <option key={o}>{o}</option>)}</select>;
+    if (fd.type === "bool") return <label className="flex min-h-9 items-center gap-2 text-sm"><input id={fieldId} aria-label={fd.label} type="checkbox" checked={value === true} onChange={e => update(e.target.checked)} /> Yes</label>;
+    if (fd.type === "textarea") return <Textarea id={fieldId} aria-label={fd.label} value={String(value ?? "")} onChange={e => update(e.target.value)} />;
+    return <Input id={fieldId} aria-label={fd.label} type={fd.type === "number" ? "number" : fd.type === "date" ? "date" : "text"} step="any" className={fd.type === "number" ? "min-w-0 font-mono" : "min-w-0"} value={typeof value === "boolean" ? "" : value ?? ""} onChange={e => update(e.target.value === "" ? null : fd.type === "number" ? Number(e.target.value) : e.target.value)} />;
   }
 
   return (
@@ -93,50 +128,55 @@ function FormEditor() {
           <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
         </>} />
 
-      {isNew && (
-        <div className="mb-6 rounded-lg border border-accent bg-accent/15 p-4">
-          <Label>Start from a previous form (optional)</Label>
-          <select className="mt-2 h-9 w-full rounded-md border bg-card px-3 text-sm" defaultValue="" onChange={(e) => e.target.value && copyFrom(e.target.value)}>
-            <option value="">— Pick a previous form to copy —</option>
-            {allForms.map((x) => <option key={x.id} value={x.id}>{x.remitter?.nickname} → {x.remittee?.nickname} · {x.remittee_invoice_no ?? "no inv"} · {x.filing_date ?? x.fy}</option>)}
-          </select>
-        </div>
-      )}
-
       <Section title="Parties">
         <Field label="Remitter (client)">
-          <select className="h-9 w-full rounded-md border bg-card px-3 text-sm" value={f.remitter_id ?? ""} onChange={(e) => set("remitter_id", e.target.value || null)}>
+          <select aria-label="Remitter (client)" className="h-9 w-full min-w-0 rounded-md border bg-card px-3 text-sm" value={f.remitter_id ?? ""} onChange={(e) => chooseParty("remitter", e.target.value)}>
             <option value="">—</option>{remitters.map((r) => <option key={r.id} value={r.id}>{r.nickname} — {r.name}</option>)}
           </select>
         </Field>
         <Field label="Remittee (payee)">
-          <select className="h-9 w-full rounded-md border bg-card px-3 text-sm" value={f.remittee_id ?? ""} onChange={(e) => set("remittee_id", e.target.value || null)}>
+          <select aria-label="Remittee (payee)" className="h-9 w-full min-w-0 rounded-md border bg-card px-3 text-sm" value={f.remittee_id ?? ""} onChange={(e) => chooseParty("remittee", e.target.value)}>
             <option value="">—</option>{remittees.map((r) => <option key={r.id} value={r.id}>{r.nickname}{r.nickname !== r.name ? ` — ${r.name}` : ""}</option>)}
           </select>
-          {remittee && <button type="button" onClick={pullFromRemittee} className="mt-1 text-xs text-primary hover:underline">Fill defaults from payee master</button>}
         </Field>
       </Section>
+
+      {isNew && f.remitter_id && f.remittee_id && <div className="mb-6 border-y py-4">
+        <Label htmlFor="previous-form">Previous form for {remitter?.nickname} → {remittee?.nickname}</Label>
+        <select id="previous-form" className="mt-2 h-9 w-full rounded-md border bg-card px-3 text-sm" value={previousId} onChange={e => e.target.value ? copyFrom(e.target.value) : setPreviousId("")}>
+          <option value="">{candidates.length ? "— Select previous form (optional) —" : "No previous forms for this combination"}</option>
+          {candidates.map(x => <option key={x.id} value={x.id}>Sr {x.sr_no ?? "—"} · {x.remittee_invoice_no ?? "No invoice"} · {x.filing_date ?? x.fy}</option>)}
+        </select>
+      </div>}
+
+      {([ ["remitter", remitter, REMITTER_FIELDS], ["remittee", remittee, REMITTEE_FIELDS] ] as const).map(([party, master, fields]) => master && <Section key={party} title={party === "remitter" ? "Particulars of the remitter (sender)" : "Particulars of the remittee (recipient)"}>
+        <div className="sm:col-span-2 lg:col-span-3"><Button variant="outline" size="sm" onClick={() => setF(p => applyMaster(p, party, master))}>Refresh from {party} master</Button></div>
+        {fields.map(fd => <Field key={fd.key} label={fd.label} wide={fd.type === "textarea"}>{control({ ...fd, key: `portal.${party}_${fd.key}` }, partyDetails(f, party, master, fd.key), v => {
+          setF(p => { const next = setField(p, `portal.${party}_${fd.key}`, v); return party === "remittee" && fd.key === "tin" ? { ...next, remittee_tin: String(v ?? "") } : next; });
+        })}</Field>)}
+      </Section>)}
+
+      <section className="mb-5 border-y py-5">
+        <div className="flex flex-wrap items-center gap-4"><h2 className="text-lg">Remittance calculation</h2>
+          <Button variant="outline" onClick={calculate}><Calculator className="mr-2 h-4 w-4" />Calculate amounts</Button>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={autoCalculate} onChange={e => { setAutoCalculate(e.target.checked); if (e.target.checked) calculate(); }} />Auto-calculate amounts</label>
+        </div>
+        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+          <Field label={detailsOf(f)["gross_up"] ? "Net payable (foreign currency)" : "Gross payable (foreign currency)"}>{control({ key: "amount_fc", label: "Amount (foreign currency)", type: "number" }, f.amount_fc, v => set("amount_fc", v))}</Field>
+          <Field label="Exchange rate (INR per unit)">{control({ key: "exchange_rate", label: "Exchange rate", type: "number" }, f.exchange_rate, v => set("exchange_rate", v))}</Field>
+          <Field label="Effective TDS rate (%)">{control({ key: "tds_rate", label: "Effective TDS rate (%)", type: "number" }, f.tds_rate, v => set("tds_rate", v))}</Field>
+          <Field label="Gross-up under section 393(10)">{control({ key: "portal.gross_up", label: "Gross-up under section 393(10)", type: "bool" }, detailsOf(f)["gross_up"], v => set("portal.gross_up", v))}</Field>
+        </div>
+      </section>
 
       {FORM_SECTIONS.map((s) => (
         <Section key={s.title} title={s.title}>
           {s.fields.map((fd) => {
-            const v = f[fd.key];
+            if (["amount_fc", "exchange_rate", "tds_rate", "portal.gross_up"].includes(fd.key)) return null;
+            const v = fieldValue(f, fd.key);
             return (
               <Field key={fd.key as string} label={fd.label} wide={fd.type === "textarea"}>
-                {fd.type === "select" ? (
-                  <select className="h-9 w-full rounded-md border bg-card px-3 text-sm" value={(v as string) ?? ""} onChange={(e) => set(fd.key, e.target.value)}>
-                    {fd.options!.map((o) => <option key={o}>{o}</option>)}
-                  </select>
-                ) : fd.type === "bool" ? (
-                  <label className="flex h-9 items-center gap-2 text-sm"><input type="checkbox" checked={!!v} onChange={(e) => set(fd.key, e.target.checked)} /> Yes</label>
-                ) : fd.type === "textarea" ? (
-                  <Textarea value={(v as string) ?? ""} onChange={(e) => set(fd.key, e.target.value)} />
-                ) : (
-                  <Input type={fd.type === "number" ? "number" : fd.type === "date" ? "date" : "text"} step="any"
-                    className={fd.type === "number" || fd.key === "udin" || fd.key === "ack_no" ? "font-mono" : ""}
-                    value={(v as string | number) ?? ""}
-                    onChange={(e) => set(fd.key, e.target.value === "" ? null : fd.type === "number" ? Number(e.target.value) : e.target.value)} />
-                )}
+                {control(fd, v, value => set(fd.key, value))}
               </Field>
             );
           })}
@@ -150,7 +190,7 @@ function FormEditor() {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="mb-5 rounded-lg border bg-card p-5">
+    <section className="mb-5 border-b py-5">
       <h2 className="mb-4 text-lg">{title}</h2>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
     </section>
@@ -158,7 +198,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function Field({ label, children, wide }: { label: string; children: React.ReactNode; wide?: boolean }) {
-  return <div className={wide ? "sm:col-span-2 lg:col-span-3" : ""}><Label className="mb-1.5 block text-xs text-muted-foreground">{label}</Label>{children}</div>;
+  return <div className={wide ? "min-w-0 sm:col-span-2 lg:col-span-3" : "min-w-0"}><Label className="mb-1.5 block text-xs text-muted-foreground">{label}</Label>{children}</div>;
 }
 
 function Attachments({ formId }: { formId: string }) {

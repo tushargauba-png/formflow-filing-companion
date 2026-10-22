@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +27,17 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
+
+  async function googleSignIn() {
+    setBusy(true);
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+      if (result.error) throw result.error;
+      if (!result.redirected) await navigate({ to: "/dashboard" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Google sign-in could not be started.");
+    } finally { setBusy(false); }
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -65,6 +77,9 @@ function AuthPage() {
       <div className="flex items-center justify-center p-8">
         <form onSubmit={submit} className="w-full max-w-sm space-y-5">
           <h2 className="text-3xl">{mode === "in" ? "Sign in" : "Create account"}</h2>
+          <Button type="button" variant="outline" className="w-full" disabled={busy} onClick={googleSignIn}>
+            <span aria-hidden="true" className="mr-2 font-semibold">G</span> Continue with Google
+          </Button>
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -76,10 +91,10 @@ function AuthPage() {
           <Button type="submit" className="w-full" disabled={busy}>
             {busy ? "Please wait…" : mode === "in" ? "Sign in" : "Create account"}
           </Button>
-          <button type="button" className="text-sm text-muted-foreground underline-offset-4 hover:underline"
+          <Button variant="link" type="button" className="px-0 text-sm text-muted-foreground"
             onClick={() => setMode(mode === "in" ? "up" : "in")}>
             {mode === "in" ? "No account yet? Create one" : "Have an account? Sign in"}
-          </button>
+          </Button>
         </form>
       </div>
     </div>

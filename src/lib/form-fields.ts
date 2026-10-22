@@ -1,4 +1,6 @@
 import type { Database } from "@/integrations/supabase/types";
+import { PORTAL_SECTIONS, CURRENCIES, type PortalField, REMITTER_FIELDS, REMITTEE_FIELDS } from "./portal-fields";
+import { detailsOf, fieldValue, partyDetails } from "./form-calculations";
 
 export type Form = Database["public"]["Tables"]["forms"]["Row"];
 export type Remitter = Database["public"]["Tables"]["remitters"]["Row"];
@@ -10,11 +12,11 @@ export const INVOICING = ["Not invoiced", "Invoiced"] as const;
 export const PAYMENT = ["Not applicable", "Pending", "Paid"] as const;
 
 export type FieldType = "text" | "number" | "date" | "bool" | "select" | "textarea";
-export interface FieldDef { key: keyof Form; label: string; type?: FieldType; options?: readonly string[] }
+export type FieldDef = PortalField;
 
 export const FORM_SECTIONS: { title: string; fields: FieldDef[] }[] = [
   { title: "Engagement", fields: [
-    { key: "sr_no", label: "Sr No" }, { key: "fy", label: "Financial year" },
+    { key: "sr_no", label: "Sr No" }, { key: "fy", label: "Tax year" },
     { key: "start_date", label: "Start date", type: "date" }, { key: "is_revised", label: "Revised form", type: "bool" },
     { key: "status", label: "Status", type: "select", options: STATUSES },
   ]},
@@ -23,17 +25,23 @@ export const FORM_SECTIONS: { title: string; fields: FieldDef[] }[] = [
     { key: "remittee_tin", label: "Remittee TIN" },
   ]},
   { title: "Remittance", fields: [
-    { key: "currency", label: "Currency" }, { key: "amount_fc", label: "Amount (foreign currency)", type: "number" },
+    { key: "portal.destination_country", label: "17. Country / region to which remittance is made" },
+    { key: "currency", label: "18. Currency", type: "select", options: CURRENCIES }, { key: "amount_fc", label: "Amount (foreign currency)", type: "number" },
     { key: "exchange_rate", label: "Exchange rate", type: "number" }, { key: "amount_inr", label: "Amount (INR)", type: "number" },
-    { key: "gross_amount", label: "Gross amount", type: "number" }, { key: "net_amount", label: "Net amount", type: "number" },
-    { key: "bank_name", label: "Remitting bank" }, { key: "proposed_remittance_date", label: "Proposed date of remittance", type: "date" },
-    { key: "nature_of_remittance", label: "Nature of remittance" }, { key: "purpose_code", label: "RBI purpose code" },
+    { key: "gross_amount", label: "19. Gross amount before TDS (INR)", type: "number" }, { key: "portal.gross_fc", label: "19. Gross amount before TDS (FC)", type: "number" },
+    { key: "proposed_remittance_date", label: "22. Proposed date of remittance", type: "date" },
+    { key: "nature_of_remittance", label: "23. Nature of remittance" }, { key: "portal.rbi_purpose_category", label: "24. RBI purpose category" }, { key: "purpose_code", label: "25. RBI sub-code" },
+    { key: "portal.gross_up", label: "26. Gross-up under section 393(10)", type: "bool" },
   ]},
-  { title: "Taxability", fields: [
-    { key: "relevant_section", label: "Relevant section of Act" }, { key: "taxable_in_india", label: "Taxable in India?" },
-    { key: "dtaa_article", label: "DTAA article" }, { key: "tds_basis", label: "Basis (Act / DTAA)" },
-    { key: "tds_rate", label: "TDS rate (%)", type: "number" }, { key: "tds_amount", label: "TDS amount", type: "number" },
+  ...PORTAL_SECTIONS.filter(s => !s.title.startsWith("Verification")),
+  { title: "30–34. Details of tax deducted at source", fields: [
+    { key: "tds_amount", label: "30. Tax deducted at source (INR)", type: "number" },
+    { key: "tds_basis", label: "31. TDS deducted as per", type: "select", options: ["as per the Act", "as per DTAA"] },
+    { key: "tds_rate", label: "32. Effective TDS rate (%)", type: "number" },
+    { key: "portal.net_fc", label: "33. Actual remittance after TDS (FC)", type: "number" }, { key: "net_amount", label: "33. Actual remittance after TDS (INR)", type: "number" },
+    { key: "portal.tds_date", label: "34. Date of deduction of tax", type: "date" },
   ]},
+  ...PORTAL_SECTIONS.filter(s => s.title.startsWith("Verification")),
   { title: "Filing & certification", fields: [
     { key: "filing_date", label: "Filing date", type: "date" }, { key: "ack_no", label: "Acknowledgement no." },
     { key: "udin", label: "UDIN" }, { key: "certificate_required", label: "Certificate required" },
@@ -53,14 +61,16 @@ export const EXPORT_COLUMNS: { key: string; label: string }[] = [
   { key: "remitter.nickname", label: "Client nickname" }, { key: "remitter.name", label: "Client name" },
   { key: "remitter.pan", label: "Client PAN" }, { key: "remittee.nickname", label: "Payee nickname" },
   { key: "remittee.name", label: "Payee name" }, { key: "remittee.country", label: "Payee country" },
+  ...REMITTER_FIELDS.filter(f => f.key !== "name" && f.key !== "pan").map(f => ({ key: `remitter.${f.key}`, label: `Remitter · ${f.label}` })),
+  ...REMITTEE_FIELDS.filter(f => f.key !== "name" && f.key !== "country").map(f => ({ key: `remittee.${f.key}`, label: `Remittee · ${f.label}` })),
   ...FORM_SECTIONS.flatMap((s) => s.fields).filter((f) => !["sr_no", "fy"].includes(f.key as string))
     .map((f) => ({ key: f.key as string, label: f.label })),
 ];
 
 export function getValue(row: FormWithParties, key: string): unknown {
-  if (key.startsWith("remitter.")) return row.remitter?.[key.slice(9) as keyof Remitter] ?? "";
-  if (key.startsWith("remittee.")) return row.remittee?.[key.slice(9) as keyof Remittee] ?? "";
-  const v = row[key as keyof Form];
+  if (key.startsWith("remitter.")) return partyDetails(row, "remitter", row.remitter, key.slice(9)) ?? "";
+  if (key.startsWith("remittee.")) return partyDetails(row, "remittee", row.remittee, key.slice(9)) ?? "";
+  const v = fieldValue(row, key);
   return typeof v === "boolean" ? (v ? "Yes" : "No") : v ?? "";
 }
 
@@ -73,6 +83,9 @@ export const NON_COPY_FIELDS: (keyof Form)[] = [
 export function buildCopy(src: Form): Partial<Form> {
   const out: Partial<Form> = { ...src };
   for (const k of NON_COPY_FIELDS) delete out[k];
+  const details = { ...detailsOf(src) };
+  delete details["tds_date"]; delete details["verification_date"];
+  out.portal_details = details;
   return { ...out, status: "Draft", invoicing_status: "Not invoiced", payment_status: "Not applicable", copied_from: src.id };
 }
 
