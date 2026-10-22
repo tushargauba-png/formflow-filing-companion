@@ -13,6 +13,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedRemitteesRouteImport } from './routes/_authenticated/remittees'
+import { Route as AuthenticatedRemittersRouteImport } from './routes/_authenticated/remitters'
+import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
 import { Route as AuthenticatedFormsIndexRouteImport } from './routes/_authenticated/forms.index'
 import { Route as AuthenticatedFormsIdRouteImport } from './routes/_authenticated/forms.$id'
 import { Route as AuthenticatedFormsIdPreviewRouteImport } from './routes/_authenticated/forms.$id_.preview'
@@ -36,6 +39,21 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRemitteesRoute = AuthenticatedRemitteesRouteImport.update({
+  id: '/remittees',
+  path: '/remittees',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedRemittersRoute = AuthenticatedRemittersRouteImport.update({
+  id: '/remitters',
+  path: '/remitters',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedFormsIndexRoute = AuthenticatedFormsIndexRouteImport.update({
   id: '/forms/',
   path: '/forms/',
@@ -57,6 +75,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/remittees': typeof AuthenticatedRemitteesRoute
+  '/remitters': typeof AuthenticatedRemittersRoute
+  '/reports': typeof AuthenticatedReportsRoute
   '/forms/$id': typeof AuthenticatedFormsIdRoute
   '/forms/': typeof AuthenticatedFormsIndexRoute
   '/forms/$id/preview': typeof AuthenticatedFormsIdPreviewRoute
@@ -65,6 +86,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/remittees': typeof AuthenticatedRemitteesRoute
+  '/remitters': typeof AuthenticatedRemittersRoute
+  '/reports': typeof AuthenticatedReportsRoute
   '/forms/$id': typeof AuthenticatedFormsIdRoute
   '/forms': typeof AuthenticatedFormsIndexRoute
   '/forms/$id/preview': typeof AuthenticatedFormsIdPreviewRoute
@@ -75,6 +99,9 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/remittees': typeof AuthenticatedRemitteesRoute
+  '/_authenticated/remitters': typeof AuthenticatedRemittersRoute
+  '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/forms/$id': typeof AuthenticatedFormsIdRoute
   '/_authenticated/forms/': typeof AuthenticatedFormsIndexRoute
   '/_authenticated/forms/$id_/preview': typeof AuthenticatedFormsIdPreviewRoute
@@ -85,6 +112,9 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/dashboard'
+    | '/remittees'
+    | '/remitters'
+    | '/reports'
     | '/forms/$id'
     | '/forms/'
     | '/forms/$id/preview'
@@ -93,6 +123,9 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/dashboard'
+    | '/remittees'
+    | '/remitters'
+    | '/reports'
     | '/forms/$id'
     | '/forms'
     | '/forms/$id/preview'
@@ -102,6 +135,9 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/dashboard'
+    | '/_authenticated/remittees'
+    | '/_authenticated/remitters'
+    | '/_authenticated/reports'
     | '/_authenticated/forms/$id'
     | '/_authenticated/forms/'
     | '/_authenticated/forms/$id_/preview'
@@ -143,6 +179,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/remittees': {
+      id: '/_authenticated/remittees'
+      path: '/remittees'
+      fullPath: '/remittees'
+      preLoaderRoute: typeof AuthenticatedRemitteesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/remitters': {
+      id: '/_authenticated/remitters'
+      path: '/remitters'
+      fullPath: '/remitters'
+      preLoaderRoute: typeof AuthenticatedRemittersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports': {
+      id: '/_authenticated/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof AuthenticatedReportsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/forms/': {
       id: '/_authenticated/forms/'
       path: '/forms'
@@ -169,6 +226,9 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedRemitteesRoute: typeof AuthenticatedRemitteesRoute
+  AuthenticatedRemittersRoute: typeof AuthenticatedRemittersRoute
+  AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedFormsIdRoute: typeof AuthenticatedFormsIdRoute
   AuthenticatedFormsIndexRoute: typeof AuthenticatedFormsIndexRoute
   AuthenticatedFormsIdPreviewRoute: typeof AuthenticatedFormsIdPreviewRoute
@@ -176,6 +236,9 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedRemitteesRoute: AuthenticatedRemitteesRoute,
+  AuthenticatedRemittersRoute: AuthenticatedRemittersRoute,
+  AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedFormsIdRoute: AuthenticatedFormsIdRoute,
   AuthenticatedFormsIndexRoute: AuthenticatedFormsIndexRoute,
   AuthenticatedFormsIdPreviewRoute: AuthenticatedFormsIdPreviewRoute,
