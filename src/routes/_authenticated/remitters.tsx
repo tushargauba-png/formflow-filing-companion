@@ -2,13 +2,14 @@ import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute } from "@tanstack/react-router";
 import { remittersQuery } from "@/lib/queries";
 import { MasterPage } from "@/components/master-page";
+import { validateRemitter } from "@/lib/validation";
 
 export const Route = createFileRoute("/_authenticated/remitters")({
   head: () => pageMeta("Remitters", "Maintain client names, addresses, tax IDs and bank details for Form 146."),
   loader: ({ context }) => context.queryClient.ensureQueryData(remittersQuery()),
   component: () => (
     <MasterPage title="Remitters" eyebrow="Client master" table="remitters" query={remittersQuery() as never}
-      listCols={["nickname", "name", "pan", "city", "email"]}
+      listCols={["nickname", "name", "pan", "city", "email"]} validate={validateRemitter as never}
       fields={[
         { key: "nickname", label: "Nickname", required: true }, { key: "name", label: "Legal name", required: true },
         { key: "pan", label: "PAN" }, { key: "tan", label: "TAN" }, { key: "address", label: "Address", type: "textarea" },

@@ -1,5 +1,5 @@
 import { useQueryClient, useSuspenseQuery, type UseSuspenseQueryOptions } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Pencil, Plus, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,13 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { issuesByKey, normaliseCodes, type Issue } from "@/lib/validation";
 
 export interface MasterField { key: string; label: string; type?: "text" | "bool" | "textarea"; required?: boolean }
 type Row = Record<string, unknown> & { id: string };
 
-export function MasterPage({ title, eyebrow, table, query, fields, listCols }: {
+export function MasterPage({ title, eyebrow, table, query, fields, listCols, validate, extraActions }: {
   title: string; eyebrow: string; table: "remitters" | "remittees";
   query: UseSuspenseQueryOptions<Row[]>; fields: MasterField[]; listCols: string[];
+  validate?: (row: Partial<Row>) => Issue[]; extraActions?: ReactNode;
 }) {
   const { data } = useSuspenseQuery(query);
   const qc = useQueryClient();
@@ -26,7 +28,9 @@ export function MasterPage({ title, eyebrow, table, query, fields, listCols }: {
   async function save() {
     if (!edit) return;
     if (!edit["nickname"] || !edit["name"]) { toast.error("Nickname and name are required"); return; }
-    const { id, created_at: _c, updated_at: _u, ...payload } = edit as Row;
+    const errors = (validate?.(edit) ?? []).filter((i) => i.level === "error");
+    if (errors.length) { toast.error(`Fix before saving: ${errors[0]!.message}`); return; }
+    const { id, created_at: _c, updated_at: _u, ...payload } = normaliseCodes(edit as Row);
     const res = id
       ? await supabase.from(table).update(payload as never).eq("id", id)
       : await supabase.from(table).insert(payload as never);
@@ -38,10 +42,11 @@ export function MasterPage({ title, eyebrow, table, query, fields, listCols }: {
   }
 
   const label = (k: string) => fields.find((f) => f.key === k)?.label ?? k;
+  const byKey = issuesByKey(edit && validate ? validate(edit) : []);
 
   return (
     <div>
-      <PageHeader eyebrow={eyebrow} title={title} actions={<Button onClick={() => setEdit({})}><Plus className="mr-1 h-4 w-4" />Add</Button>} />
+      <PageHeader eyebrow={eyebrow} title={title} actions={<>{extraActions}<Button onClick={() => setEdit({})}><Plus className="mr-1 h-4 w-4" />Add</Button></>} />
       <div className="relative mb-4 w-72">
         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input className="pl-8" placeholder="Search…" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -72,8 +77,9 @@ export function MasterPage({ title, eyebrow, table, query, fields, listCols }: {
                 {f.type === "bool" ? (
                   <label className="flex h-9 items-center gap-2 text-sm"><input type="checkbox" checked={!!edit?.[f.key]} onChange={(e) => setEdit({ ...edit, [f.key]: e.target.checked })} /> Yes</label>
                 ) : (
-                  <Input value={(edit?.[f.key] as string) ?? ""} onChange={(e) => setEdit({ ...edit, [f.key]: e.target.value || null })} />
+                  <Input value={(edit?.[f.key] as string) ?? ""} aria-invalid={byKey.has(f.key) || undefined} onChange={(e) => setEdit({ ...edit, [f.key]: e.target.value || null })} />
                 )}
+                {byKey.get(f.key)?.map((i) => <p key={i.message} className={`mt-1 text-xs ${i.level === "error" ? "text-destructive" : "text-muted-foreground"}`}>{i.message}</p>)}
               </div>
             ))}
           </div>

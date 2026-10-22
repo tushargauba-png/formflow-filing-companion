@@ -388,6 +388,10 @@ export type Database = {
     }
     Functions: {
       is_allowed_user: { Args: never; Returns: boolean }
+      merge_remittees: {
+        Args: { keep_id: string; merge_ids: string[]; mark_revised?: boolean }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never

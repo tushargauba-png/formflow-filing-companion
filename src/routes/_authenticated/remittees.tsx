@@ -1,14 +1,16 @@
 import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute } from "@tanstack/react-router";
-import { remitteesQuery } from "@/lib/queries";
+import { formsQuery, remitteesQuery } from "@/lib/queries";
 import { MasterPage } from "@/components/master-page";
+import { RemitteeMerge } from "@/components/remittee-merge";
+import { validateRemittee } from "@/lib/validation";
 
 export const Route = createFileRoute("/_authenticated/remittees")({
   head: () => pageMeta("Remittees", "Maintain recipient particulars, residence details and tax documentation."),
-  loader: ({ context }) => context.queryClient.ensureQueryData(remitteesQuery()),
+  loader: ({ context }) => Promise.all([context.queryClient.ensureQueryData(remitteesQuery()), context.queryClient.ensureQueryData(formsQuery())]),
   component: () => (
     <MasterPage title="Remittees" eyebrow="Payee master" table="remittees" query={remitteesQuery() as never}
-      listCols={["nickname", "name", "country", "tin", "purpose_code"]}
+      listCols={["nickname", "name", "country", "tin", "purpose_code"]} validate={validateRemittee as never} extraActions={<RemitteeMerge />}
       fields={[
         { key: "nickname", label: "Nickname", required: true }, { key: "name", label: "Legal name", required: true },
         { key: "country", label: "Country" }, { key: "tin", label: "Tax ID (TIN)" }, { key: "address", label: "Address", type: "textarea" },

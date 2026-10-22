@@ -9,6 +9,7 @@ import { formQuery, formsQuery, remitteesQuery, remittersQuery } from "@/lib/que
 import { FORM_SECTIONS, buildCopy, type Form, type FieldDef } from "@/lib/form-fields";
 import { REMITTER_FIELDS, REMITTEE_FIELDS } from "@/lib/portal-fields";
 import { applyMaster, applyCalculation, matchingForms, partyDetails, fieldValue, setField, detailsOf } from "@/lib/form-calculations";
+import { issuesByKey, nextSrNo, normaliseCodes, validateForm, type Issue } from "@/lib/validation";
 import { PageHeader } from "@/components/ui-bits";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,6 +83,14 @@ function FormEditor() {
       try { payload = applyCalculation(payload); setF(payload); }
       catch (error) { setSaving(false); toast.error((error as Error).message); return; }
     }
+    const errors = validateForm(payload, validationContext).filter(i => i.level === "error");
+    if (errors.length) {
+      setSaving(false);
+      toast.error(`Fix ${errors.length} problem${errors.length > 1 ? "s" : ""} before saving: ${errors[0]!.message}`);
+      return;
+    }
+    payload = normaliseCodes(payload);
+    if (!payload.sr_no?.trim()) payload.sr_no = null; // assigned by the database on insert
     delete payload.id; delete payload.created_at; delete payload.updated_at;
     const res = isNew
       ? await supabase.from("forms").insert(payload as never).select("id").single()
@@ -103,6 +112,10 @@ function FormEditor() {
 
   const remittee = remittees.find((r) => r.id === f.remittee_id);
   const remitter = remitters.find(r => r.id === f.remitter_id);
+  const otherForms = allForms.filter(x => x.id !== id);
+  const validationContext = { remitter, remittee, savedStatus: isNew ? null : existing.data?.status, otherSrNos: otherForms.map(x => x.sr_no?.trim() ?? "") };
+  const issues = validateForm(f, validationContext);
+  const byKey = issuesByKey(issues);
   function chooseParty(party: "remitter" | "remittee", masterId: string) {
     setPreviousId("");
     setF(p => applyMaster({ ...p, copied_from: null }, party, party === "remitter" ? remitters.find(r => r.id === masterId) : remittees.find(r => r.id === masterId)));
@@ -116,7 +129,8 @@ function FormEditor() {
     if (fd.type === "select") return <select id={fieldId} aria-label={fd.label} className="h-9 w-full min-w-0 rounded-md border bg-card px-3 text-sm" value={String(value ?? "")} onChange={e => update(e.target.value || null)}><option value="">—</option>{value && !fd.options?.includes(String(value)) && <option value={String(value)}>{String(value)}</option>}{fd.options?.map(o => <option key={o}>{o}</option>)}</select>;
     if (fd.type === "bool") return <label className="flex min-h-9 items-center gap-2 text-sm"><input id={fieldId} aria-label={fd.label} type="checkbox" checked={value === true} onChange={e => update(e.target.checked)} /> Yes</label>;
     if (fd.type === "textarea") return <Textarea id={fieldId} aria-label={fd.label} value={String(value ?? "")} onChange={e => update(e.target.value)} />;
-    return <Input id={fieldId} aria-label={fd.label} type={fd.type === "number" ? "number" : fd.type === "date" ? "date" : "text"} step="any" className={fd.type === "number" ? "min-w-0 font-mono" : "min-w-0"} value={typeof value === "boolean" ? "" : value ?? ""} onChange={e => update(e.target.value === "" ? null : fd.type === "number" ? Number(e.target.value) : e.target.value)} />;
+    const placeholder = fd.key === "sr_no" && isNew ? `Auto (${nextSrNo(otherForms.map(x => x.sr_no))})` : undefined;
+    return <Input id={fieldId} aria-label={fd.label} aria-invalid={byKey.get(fd.key)?.some(i => i.level === "error") || undefined} placeholder={placeholder} type={fd.type === "number" ? "number" : fd.type === "date" ? "date" : "text"} step="any" className={fd.type === "number" ? "min-w-0 font-mono" : "min-w-0"} value={typeof value === "boolean" ? "" : value ?? ""} onChange={e => update(e.target.value === "" ? null : fd.type === "number" ? Number(e.target.value) : e.target.value)} />;
   }
 
   return (
@@ -127,6 +141,8 @@ function FormEditor() {
           {!isNew && <Button variant="ghost" onClick={remove}><Trash2 className="h-4 w-4" /></Button>}
           <Button onClick={save} disabled={saving}>{saving ? "Saving…" : "Save"}</Button>
         </>} />
+
+      <IssueSummary issues={issues} />
 
       <Section title="Parties">
         <Field label="Remitter (client)">
@@ -151,7 +167,7 @@ function FormEditor() {
 
       {([ ["remitter", remitter, REMITTER_FIELDS], ["remittee", remittee, REMITTEE_FIELDS] ] as const).map(([party, master, fields]) => master && <Section key={party} title={party === "remitter" ? "Particulars of the remitter (sender)" : "Particulars of the remittee (recipient)"}>
         <div className="sm:col-span-2 lg:col-span-3"><Button variant="outline" size="sm" onClick={() => setF(p => applyMaster(p, party, master))}>Refresh from {party} master</Button></div>
-        {fields.map(fd => <Field key={fd.key} label={fd.label} wide={fd.type === "textarea"}>{control({ ...fd, key: `portal.${party}_${fd.key}` }, partyDetails(f, party, master, fd.key), v => {
+        {fields.map(fd => <Field key={fd.key} label={fd.label} wide={fd.type === "textarea"} issues={byKey.get(`portal.${party}_${fd.key}`)}>{control({ ...fd, key: `portal.${party}_${fd.key}` }, partyDetails(f, party, master, fd.key), v => {
           setF(p => { const next = setField(p, `portal.${party}_${fd.key}`, v); return party === "remittee" && fd.key === "tin" ? { ...next, remittee_tin: String(v ?? "") } : next; });
         })}</Field>)}
       </Section>)}
@@ -162,9 +178,9 @@ function FormEditor() {
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={autoCalculate} onChange={e => { setAutoCalculate(e.target.checked); if (e.target.checked) calculate(); }} />Auto-calculate amounts</label>
         </div>
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
-          <Field label={detailsOf(f)["gross_up"] ? "Net payable (foreign currency)" : "Gross payable (foreign currency)"}>{control({ key: "amount_fc", label: "Amount (foreign currency)", type: "number" }, f.amount_fc, v => set("amount_fc", v))}</Field>
-          <Field label="Exchange rate (INR per unit)">{control({ key: "exchange_rate", label: "Exchange rate", type: "number" }, f.exchange_rate, v => set("exchange_rate", v))}</Field>
-          <Field label="Effective TDS rate (%)">{control({ key: "tds_rate", label: "Effective TDS rate (%)", type: "number" }, f.tds_rate, v => set("tds_rate", v))}</Field>
+          <Field label={detailsOf(f)["gross_up"] ? "Net payable (foreign currency)" : "Gross payable (foreign currency)"} issues={byKey.get("amount_fc")}>{control({ key: "amount_fc", label: "Amount (foreign currency)", type: "number" }, f.amount_fc, v => set("amount_fc", v))}</Field>
+          <Field label="Exchange rate (INR per unit)" issues={byKey.get("exchange_rate")}>{control({ key: "exchange_rate", label: "Exchange rate", type: "number" }, f.exchange_rate, v => set("exchange_rate", v))}</Field>
+          <Field label="Effective TDS rate (%)" issues={byKey.get("tds_rate")}>{control({ key: "tds_rate", label: "Effective TDS rate (%)", type: "number" }, f.tds_rate, v => set("tds_rate", v))}</Field>
           <Field label="Gross-up under section 393(10)">{control({ key: "portal.gross_up", label: "Gross-up under section 393(10)", type: "bool" }, detailsOf(f)["gross_up"], v => set("portal.gross_up", v))}</Field>
         </div>
       </section>
@@ -175,7 +191,7 @@ function FormEditor() {
             if (["amount_fc", "exchange_rate", "tds_rate", "portal.gross_up"].includes(fd.key)) return null;
             const v = fieldValue(f, fd.key);
             return (
-              <Field key={fd.key as string} label={fd.label} wide={fd.type === "textarea"}>
+              <Field key={fd.key as string} label={fd.label} wide={fd.type === "textarea"} issues={byKey.get(fd.key)}>
                 {control(fd, v, value => set(fd.key, value))}
               </Field>
             );
@@ -197,8 +213,26 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function Field({ label, children, wide }: { label: string; children: React.ReactNode; wide?: boolean }) {
-  return <div className={wide ? "min-w-0 sm:col-span-2 lg:col-span-3" : "min-w-0"}><Label className="mb-1.5 block text-xs text-muted-foreground">{label}</Label>{children}</div>;
+function Field({ label, children, wide, issues }: { label: string; children: React.ReactNode; wide?: boolean; issues?: Issue[] | undefined }) {
+  return <div className={wide ? "min-w-0 sm:col-span-2 lg:col-span-3" : "min-w-0"}><Label className="mb-1.5 block text-xs text-muted-foreground">{label}</Label>{children}
+    {issues?.map(i => <p key={i.message} className={`mt-1 text-xs ${i.level === "error" ? "text-destructive" : "text-muted-foreground"}`}>{i.message}</p>)}
+  </div>;
+}
+
+function IssueSummary({ issues }: { issues: Issue[] }) {
+  if (!issues.length) return null;
+  const errors = issues.filter(i => i.level === "error");
+  return (
+    <details className={`no-print mb-5 rounded-md border p-3 text-sm ${errors.length ? "border-destructive/40 bg-destructive/5" : "border-warning/40 bg-warning/10"}`} open={errors.length > 0}>
+      <summary className="cursor-pointer font-medium">
+        {errors.length ? `${errors.length} problem${errors.length > 1 ? "s" : ""} to fix before saving` : "No blocking problems"}
+        {issues.length > errors.length && ` · ${issues.length - errors.length} warning${issues.length - errors.length > 1 ? "s" : ""}`}
+      </summary>
+      <ul className="mt-2 list-disc space-y-0.5 pl-5">
+        {[...errors, ...issues.filter(i => i.level === "warning")].map(i => <li key={i.key + i.message} className={i.level === "error" ? "text-destructive" : ""}>{i.message}</li>)}
+      </ul>
+    </details>
+  );
 }
 
 function Attachments({ formId }: { formId: string }) {

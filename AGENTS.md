@@ -10,7 +10,9 @@
 <!-- LOVABLE:END -->
 
 ## Architecture rules
-- All app data (remitters, remittees, forms, export_templates, form_attachments) is shared across signed-in users via `to authenticated using (true)` RLS — single-firm app; add roles via a separate user_roles table if staff permissions are needed.
+- All app data (remitters, remittees, forms, export_templates, form_attachments, form-files storage) is shared across signed-in users whose confirmed email is in `allowed_users`, via `public.is_allowed_user()` RLS — single-firm app; there is no self sign-up. Add roles via a separate user_roles table if staff permissions are needed.
+- Field formats (PAN, TAN, IFSC, BSR, UDIN…) and the fields each status requires live in `src/lib/validation.ts`; errors block saving, warnings never do. Status requirements only block when the status is being moved up, so historic records stay editable.
+- New forms get the next running Sr No from the `forms_assign_sr_no` trigger when left blank; `nextSrNo` mirrors it for the placeholder.
 - Form 145 will reuse the `forms` table via the `form_type` column ('146' / '145') rather than a new table, so masters, register and exports stay shared.
 - Form field definitions, statuses and export columns live in `src/lib/form-fields.ts`; editor, preview and exports read from there so a new field is added in one place.
 - Data reads go through react-query options in `src/lib/queries.ts` using the browser client (RLS applies); no server functions needed yet.
