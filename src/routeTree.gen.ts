@@ -10,33 +10,143 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedRemitteesRouteImport } from './routes/_authenticated/remittees'
+import { Route as AuthenticatedRemittersRouteImport } from './routes/_authenticated/remitters'
+import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
+import { Route as AuthenticatedFormsIndexRouteImport } from './routes/_authenticated/forms.index'
+import { Route as AuthenticatedFormsIdRouteImport } from './routes/_authenticated/forms.$id'
+import { Route as AuthenticatedFormsIdPreviewRouteImport } from './routes/_authenticated/forms.$id_.preview'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedRemitteesRoute = AuthenticatedRemitteesRouteImport.update({
+  id: '/remittees',
+  path: '/remittees',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedRemittersRoute = AuthenticatedRemittersRouteImport.update({
+  id: '/remitters',
+  path: '/remitters',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedFormsIndexRoute = AuthenticatedFormsIndexRouteImport.update({
+  id: '/forms/',
+  path: '/forms/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedFormsIdRoute = AuthenticatedFormsIdRouteImport.update({
+  id: '/forms/$id',
+  path: '/forms/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedFormsIdPreviewRoute =
+  AuthenticatedFormsIdPreviewRouteImport.update({
+    id: '/forms/$id_/preview',
+    path: '/forms/$id/preview',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/remittees': typeof AuthenticatedRemitteesRoute
+  '/remitters': typeof AuthenticatedRemittersRoute
+  '/reports': typeof AuthenticatedReportsRoute
+  '/forms/$id': typeof AuthenticatedFormsIdRoute
+  '/forms/': typeof AuthenticatedFormsIndexRoute
+  '/forms/$id/preview': typeof AuthenticatedFormsIdPreviewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
+  '/remittees': typeof AuthenticatedRemitteesRoute
+  '/remitters': typeof AuthenticatedRemittersRoute
+  '/reports': typeof AuthenticatedReportsRoute
+  '/forms/$id': typeof AuthenticatedFormsIdRoute
+  '/forms': typeof AuthenticatedFormsIndexRoute
+  '/forms/$id/preview': typeof AuthenticatedFormsIdPreviewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/remittees': typeof AuthenticatedRemitteesRoute
+  '/_authenticated/remitters': typeof AuthenticatedRemittersRoute
+  '/_authenticated/reports': typeof AuthenticatedReportsRoute
+  '/_authenticated/forms/$id': typeof AuthenticatedFormsIdRoute
+  '/_authenticated/forms/': typeof AuthenticatedFormsIndexRoute
+  '/_authenticated/forms/$id_/preview': typeof AuthenticatedFormsIdPreviewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/remittees'
+    | '/remitters'
+    | '/reports'
+    | '/forms/$id'
+    | '/forms/'
+    | '/forms/$id/preview'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/remittees'
+    | '/remitters'
+    | '/reports'
+    | '/forms/$id'
+    | '/forms'
+    | '/forms/$id/preview'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/_authenticated/dashboard'
+    | '/_authenticated/remittees'
+    | '/_authenticated/remitters'
+    | '/_authenticated/reports'
+    | '/_authenticated/forms/$id'
+    | '/_authenticated/forms/'
+    | '/_authenticated/forms/$id_/preview'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +158,99 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/remittees': {
+      id: '/_authenticated/remittees'
+      path: '/remittees'
+      fullPath: '/remittees'
+      preLoaderRoute: typeof AuthenticatedRemitteesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/remitters': {
+      id: '/_authenticated/remitters'
+      path: '/remitters'
+      fullPath: '/remitters'
+      preLoaderRoute: typeof AuthenticatedRemittersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/reports': {
+      id: '/_authenticated/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof AuthenticatedReportsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/forms/': {
+      id: '/_authenticated/forms/'
+      path: '/forms'
+      fullPath: '/forms/'
+      preLoaderRoute: typeof AuthenticatedFormsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/forms/$id': {
+      id: '/_authenticated/forms/$id'
+      path: '/forms/$id'
+      fullPath: '/forms/$id'
+      preLoaderRoute: typeof AuthenticatedFormsIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/forms/$id_/preview': {
+      id: '/_authenticated/forms/$id_/preview'
+      path: '/forms/$id/preview'
+      fullPath: '/forms/$id/preview'
+      preLoaderRoute: typeof AuthenticatedFormsIdPreviewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedRemitteesRoute: typeof AuthenticatedRemitteesRoute
+  AuthenticatedRemittersRoute: typeof AuthenticatedRemittersRoute
+  AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
+  AuthenticatedFormsIdRoute: typeof AuthenticatedFormsIdRoute
+  AuthenticatedFormsIndexRoute: typeof AuthenticatedFormsIndexRoute
+  AuthenticatedFormsIdPreviewRoute: typeof AuthenticatedFormsIdPreviewRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedRemitteesRoute: AuthenticatedRemitteesRoute,
+  AuthenticatedRemittersRoute: AuthenticatedRemittersRoute,
+  AuthenticatedReportsRoute: AuthenticatedReportsRoute,
+  AuthenticatedFormsIdRoute: AuthenticatedFormsIdRoute,
+  AuthenticatedFormsIndexRoute: AuthenticatedFormsIndexRoute,
+  AuthenticatedFormsIdPreviewRoute: AuthenticatedFormsIdPreviewRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
