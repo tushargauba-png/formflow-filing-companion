@@ -14,6 +14,8 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedFormsIndexRouteImport } from './routes/_authenticated/forms.index'
+import { Route as AuthenticatedFormsIdRouteImport } from './routes/_authenticated/forms.$id'
+import { Route as AuthenticatedFormsIdPreviewRouteImport } from './routes/_authenticated/forms.$id_.preview'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -39,18 +41,33 @@ const AuthenticatedFormsIndexRoute = AuthenticatedFormsIndexRouteImport.update({
   path: '/forms/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedFormsIdRoute = AuthenticatedFormsIdRouteImport.update({
+  id: '/forms/$id',
+  path: '/forms/$id',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedFormsIdPreviewRoute =
+  AuthenticatedFormsIdPreviewRouteImport.update({
+    id: '/forms/$id_/preview',
+    path: '/forms/$id/preview',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/forms/$id': typeof AuthenticatedFormsIdRoute
   '/forms/': typeof AuthenticatedFormsIndexRoute
+  '/forms/$id/preview': typeof AuthenticatedFormsIdPreviewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/forms/$id': typeof AuthenticatedFormsIdRoute
   '/forms': typeof AuthenticatedFormsIndexRoute
+  '/forms/$id/preview': typeof AuthenticatedFormsIdPreviewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -58,20 +75,36 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/forms/$id': typeof AuthenticatedFormsIdRoute
   '/_authenticated/forms/': typeof AuthenticatedFormsIndexRoute
+  '/_authenticated/forms/$id_/preview': typeof AuthenticatedFormsIdPreviewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/dashboard' | '/forms/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/forms/$id'
+    | '/forms/'
+    | '/forms/$id/preview'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/dashboard' | '/forms'
+  to:
+    | '/'
+    | '/auth'
+    | '/dashboard'
+    | '/forms/$id'
+    | '/forms'
+    | '/forms/$id/preview'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/dashboard'
+    | '/_authenticated/forms/$id'
     | '/_authenticated/forms/'
+    | '/_authenticated/forms/$id_/preview'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -117,17 +150,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedFormsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/forms/$id': {
+      id: '/_authenticated/forms/$id'
+      path: '/forms/$id'
+      fullPath: '/forms/$id'
+      preLoaderRoute: typeof AuthenticatedFormsIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/forms/$id_/preview': {
+      id: '/_authenticated/forms/$id_/preview'
+      path: '/forms/$id/preview'
+      fullPath: '/forms/$id/preview'
+      preLoaderRoute: typeof AuthenticatedFormsIdPreviewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedFormsIdRoute: typeof AuthenticatedFormsIdRoute
   AuthenticatedFormsIndexRoute: typeof AuthenticatedFormsIndexRoute
+  AuthenticatedFormsIdPreviewRoute: typeof AuthenticatedFormsIdPreviewRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedFormsIdRoute: AuthenticatedFormsIdRoute,
   AuthenticatedFormsIndexRoute: AuthenticatedFormsIndexRoute,
+  AuthenticatedFormsIdPreviewRoute: AuthenticatedFormsIdPreviewRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
