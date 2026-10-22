@@ -95,6 +95,7 @@ export type Database = {
           nature_of_remittance: string | null
           net_amount: number | null
           payment_status: string
+          portal_details: Json
           proposed_remittance_date: string | null
           purpose_code: string | null
           relevant_section: string | null
@@ -138,6 +139,7 @@ export type Database = {
           nature_of_remittance?: string | null
           net_amount?: number | null
           payment_status?: string
+          portal_details?: Json
           proposed_remittance_date?: string | null
           purpose_code?: string | null
           relevant_section?: string | null
@@ -181,6 +183,7 @@ export type Database = {
           nature_of_remittance?: string | null
           net_amount?: number | null
           payment_status?: string
+          portal_details?: Json
           proposed_remittance_date?: string | null
           purpose_code?: string | null
           relevant_section?: string | null
@@ -230,10 +233,14 @@ export type Database = {
           nature_of_remittance: string | null
           nickname: string
           notes: string | null
+          pan: string | null
           pe_in_india: boolean | null
+          phone: string | null
+          principal_place: string | null
           purpose_code: string | null
           tin: string | null
           trc_available: boolean | null
+          trc_number: string | null
           updated_at: string
         }
         Insert: {
@@ -248,10 +255,14 @@ export type Database = {
           nature_of_remittance?: string | null
           nickname: string
           notes?: string | null
+          pan?: string | null
           pe_in_india?: boolean | null
+          phone?: string | null
+          principal_place?: string | null
           purpose_code?: string | null
           tin?: string | null
           trc_available?: boolean | null
+          trc_number?: string | null
           updated_at?: string
         }
         Update: {
@@ -266,10 +277,14 @@ export type Database = {
           nature_of_remittance?: string | null
           nickname?: string
           notes?: string | null
+          pan?: string | null
           pe_in_india?: boolean | null
+          phone?: string | null
+          principal_place?: string | null
           purpose_code?: string | null
           tin?: string | null
           trc_available?: boolean | null
+          trc_number?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -279,12 +294,14 @@ export type Database = {
           address: string | null
           ao_details: string | null
           bank_branch: string | null
+          bank_ifsc: string | null
           bank_name: string | null
           bsr_code: string | null
           city: string | null
           country: string | null
           created_at: string
           email: string | null
+          entity_status: string | null
           id: string
           name: string
           nickname: string
@@ -292,6 +309,7 @@ export type Database = {
           pan: string | null
           phone: string | null
           pincode: string | null
+          residential_status: string | null
           state: string | null
           tan: string | null
           updated_at: string
@@ -300,12 +318,14 @@ export type Database = {
           address?: string | null
           ao_details?: string | null
           bank_branch?: string | null
+          bank_ifsc?: string | null
           bank_name?: string | null
           bsr_code?: string | null
           city?: string | null
           country?: string | null
           created_at?: string
           email?: string | null
+          entity_status?: string | null
           id?: string
           name: string
           nickname: string
@@ -313,6 +333,7 @@ export type Database = {
           pan?: string | null
           phone?: string | null
           pincode?: string | null
+          residential_status?: string | null
           state?: string | null
           tan?: string | null
           updated_at?: string
@@ -321,12 +342,14 @@ export type Database = {
           address?: string | null
           ao_details?: string | null
           bank_branch?: string | null
+          bank_ifsc?: string | null
           bank_name?: string | null
           bsr_code?: string | null
           city?: string | null
           country?: string | null
           created_at?: string
           email?: string | null
+          entity_status?: string | null
           id?: string
           name?: string
           nickname?: string
@@ -334,6 +357,7 @@ export type Database = {
           pan?: string | null
           phone?: string | null
           pincode?: string | null
+          residential_status?: string | null
           state?: string | null
           tan?: string | null
           updated_at?: string
