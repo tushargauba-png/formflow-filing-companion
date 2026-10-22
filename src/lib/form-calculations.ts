@@ -44,7 +44,7 @@ export function calculateRemittance(amountFc: number, exchangeRate: number, taxR
 export function applyCalculation(f: Partial<Form>): Partial<Form> {
   if (f.amount_fc == null || f.exchange_rate == null) throw new Error("Enter amount in foreign currency and exchange rate first.");
   const d = detailsOf(f);
-  const result = calculateRemittance(f.amount_fc, f.exchange_rate, f.tds_rate ?? 0, d.gross_up === true);
+  const result = calculateRemittance(f.amount_fc, f.exchange_rate, f.tds_rate ?? 0, d["gross_up"] === true);
   const { gross_fc, net_fc, ...scalars } = result;
   return { ...f, ...scalars, portal_details: { ...d, gross_fc, net_fc } };
 }

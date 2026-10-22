@@ -15,7 +15,7 @@ export const REMITTEE_FIELDS: PortalField[] = [
   { key: "trc_available", label: "TRC obtained", type: "bool" }, { key: "trc_number", label: "TRC number" },
   { key: "form_10f", label: "Form 10F on file", type: "bool" }, { key: "pe_in_india", label: "PE in India", type: "bool" },
 ];
-const p = (key: string, label: string, type?: PortalField["type"], options?: readonly string[]): PortalField => ({ key: `portal.${key}`, label, type, options });
+const p = (key: string, label: string, type?: PortalField["type"], options?: readonly string[]): PortalField => ({ key: `portal.${key}`, label, ...(type ? { type } : {}), ...(options ? { options } : {}) });
 export const PORTAL_SECTIONS: { title: string; fields: PortalField[] }[] = [
   { title: "20–21. Bank & authorised dealer", fields: [
     p("bank_ifsc", "20(a). IFSC code"), { key: "bank_name", label: "20(b). Bank name" }, p("bank_branch", "20(c). Branch"), p("bsr_code", "20(d). BSR code (7 digits)"),

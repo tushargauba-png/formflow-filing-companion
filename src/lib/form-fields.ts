@@ -84,7 +84,7 @@ export function buildCopy(src: Form): Partial<Form> {
   const out: Partial<Form> = { ...src };
   for (const k of NON_COPY_FIELDS) delete out[k];
   const details = { ...detailsOf(src) };
-  delete details.tds_date; delete details.verification_date;
+  delete details["tds_date"]; delete details["verification_date"];
   out.portal_details = details;
   return { ...out, status: "Draft", invoicing_status: "Not invoiced", payment_status: "Not applicable", copied_from: src.id };
 }

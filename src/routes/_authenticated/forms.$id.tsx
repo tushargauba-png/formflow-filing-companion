@@ -65,7 +65,7 @@ function FormEditor() {
     const src = candidates.find((x) => x.id === srcId); if (!src) return;
     const { remitter: _a, remittee: _b, ...plain } = src;
     const copied = buildCopy(plain);
-    const snap = detailsOf(copied);
+    const snap = { ...detailsOf(copied), ...(plain.remittee_tin ? { remittee_tin: plain.remittee_tin } : {}) };
     const remitterMaster = remitters.find(r => r.id === src.remitter_id);
     const remitteeMaster = remittees.find(r => r.id === src.remittee_id);
     const masterFallback = applyMaster(applyMaster(copied, "remitter", remitterMaster), "remittee", remitteeMaster);
@@ -162,10 +162,10 @@ function FormEditor() {
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={autoCalculate} onChange={e => { setAutoCalculate(e.target.checked); if (e.target.checked) calculate(); }} />Auto-calculate amounts</label>
         </div>
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
-          <Field label={detailsOf(f).gross_up ? "Net payable (foreign currency)" : "Gross payable (foreign currency)"}>{control({ key: "amount_fc", label: "Amount (foreign currency)", type: "number" }, f.amount_fc, v => set("amount_fc", v))}</Field>
+          <Field label={detailsOf(f)["gross_up"] ? "Net payable (foreign currency)" : "Gross payable (foreign currency)"}>{control({ key: "amount_fc", label: "Amount (foreign currency)", type: "number" }, f.amount_fc, v => set("amount_fc", v))}</Field>
           <Field label="Exchange rate (INR per unit)">{control({ key: "exchange_rate", label: "Exchange rate", type: "number" }, f.exchange_rate, v => set("exchange_rate", v))}</Field>
           <Field label="Effective TDS rate (%)">{control({ key: "tds_rate", label: "Effective TDS rate (%)", type: "number" }, f.tds_rate, v => set("tds_rate", v))}</Field>
-          <Field label="Gross-up under section 393(10)">{control({ key: "portal.gross_up", label: "Gross-up under section 393(10)", type: "bool" }, detailsOf(f).gross_up, v => set("portal.gross_up", v))}</Field>
+          <Field label="Gross-up under section 393(10)">{control({ key: "portal.gross_up", label: "Gross-up under section 393(10)", type: "bool" }, detailsOf(f)["gross_up"], v => set("portal.gross_up", v))}</Field>
         </div>
       </section>
 
