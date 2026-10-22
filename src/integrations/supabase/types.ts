@@ -14,7 +14,332 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      export_templates: {
+        Row: {
+          columns: Json
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          columns?: Json
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          columns?: Json
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      form_attachments: {
+        Row: {
+          created_at: string
+          doc_type: string | null
+          file_name: string
+          form_id: string
+          id: string
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          doc_type?: string | null
+          file_name: string
+          form_id: string
+          id?: string
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          doc_type?: string | null
+          file_name?: string
+          form_id?: string
+          id?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_attachments_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forms: {
+        Row: {
+          ack_no: string | null
+          amount_fc: number | null
+          amount_inr: number | null
+          bank_name: string | null
+          billing_invoice_no: string | null
+          certificate_required: string | null
+          certification_charges: number | null
+          copied_from: string | null
+          created_at: string
+          currency: string | null
+          document_description: string | null
+          dtaa_article: string | null
+          exchange_rate: number | null
+          filing_date: string | null
+          form_type: string
+          fy: string | null
+          gross_amount: number | null
+          id: string
+          invoicing_status: string
+          is_revised: boolean
+          nature_of_remittance: string | null
+          net_amount: number | null
+          payment_status: string
+          proposed_remittance_date: string | null
+          purpose_code: string | null
+          relevant_section: string | null
+          remarks: string | null
+          remittee_id: string | null
+          remittee_invoice_date: string | null
+          remittee_invoice_no: string | null
+          remittee_tin: string | null
+          remitter_id: string | null
+          sr_no: string | null
+          start_date: string | null
+          status: string
+          taxable_in_india: string | null
+          tds_amount: number | null
+          tds_basis: string | null
+          tds_rate: number | null
+          udin: string | null
+          updated_at: string
+        }
+        Insert: {
+          ack_no?: string | null
+          amount_fc?: number | null
+          amount_inr?: number | null
+          bank_name?: string | null
+          billing_invoice_no?: string | null
+          certificate_required?: string | null
+          certification_charges?: number | null
+          copied_from?: string | null
+          created_at?: string
+          currency?: string | null
+          document_description?: string | null
+          dtaa_article?: string | null
+          exchange_rate?: number | null
+          filing_date?: string | null
+          form_type?: string
+          fy?: string | null
+          gross_amount?: number | null
+          id?: string
+          invoicing_status?: string
+          is_revised?: boolean
+          nature_of_remittance?: string | null
+          net_amount?: number | null
+          payment_status?: string
+          proposed_remittance_date?: string | null
+          purpose_code?: string | null
+          relevant_section?: string | null
+          remarks?: string | null
+          remittee_id?: string | null
+          remittee_invoice_date?: string | null
+          remittee_invoice_no?: string | null
+          remittee_tin?: string | null
+          remitter_id?: string | null
+          sr_no?: string | null
+          start_date?: string | null
+          status?: string
+          taxable_in_india?: string | null
+          tds_amount?: number | null
+          tds_basis?: string | null
+          tds_rate?: number | null
+          udin?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ack_no?: string | null
+          amount_fc?: number | null
+          amount_inr?: number | null
+          bank_name?: string | null
+          billing_invoice_no?: string | null
+          certificate_required?: string | null
+          certification_charges?: number | null
+          copied_from?: string | null
+          created_at?: string
+          currency?: string | null
+          document_description?: string | null
+          dtaa_article?: string | null
+          exchange_rate?: number | null
+          filing_date?: string | null
+          form_type?: string
+          fy?: string | null
+          gross_amount?: number | null
+          id?: string
+          invoicing_status?: string
+          is_revised?: boolean
+          nature_of_remittance?: string | null
+          net_amount?: number | null
+          payment_status?: string
+          proposed_remittance_date?: string | null
+          purpose_code?: string | null
+          relevant_section?: string | null
+          remarks?: string | null
+          remittee_id?: string | null
+          remittee_invoice_date?: string | null
+          remittee_invoice_no?: string | null
+          remittee_tin?: string | null
+          remitter_id?: string | null
+          sr_no?: string | null
+          start_date?: string | null
+          status?: string
+          taxable_in_india?: string | null
+          tds_amount?: number | null
+          tds_basis?: string | null
+          tds_rate?: number | null
+          udin?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forms_remittee_id_fkey"
+            columns: ["remittee_id"]
+            isOneToOne: false
+            referencedRelation: "remittees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "forms_remitter_id_fkey"
+            columns: ["remitter_id"]
+            isOneToOne: false
+            referencedRelation: "remitters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      remittees: {
+        Row: {
+          address: string | null
+          country: string | null
+          created_at: string
+          dtaa_article: string | null
+          email: string | null
+          form_10f: boolean | null
+          id: string
+          name: string
+          nature_of_remittance: string | null
+          nickname: string
+          notes: string | null
+          pe_in_india: boolean | null
+          purpose_code: string | null
+          tin: string | null
+          trc_available: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          country?: string | null
+          created_at?: string
+          dtaa_article?: string | null
+          email?: string | null
+          form_10f?: boolean | null
+          id?: string
+          name: string
+          nature_of_remittance?: string | null
+          nickname: string
+          notes?: string | null
+          pe_in_india?: boolean | null
+          purpose_code?: string | null
+          tin?: string | null
+          trc_available?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          country?: string | null
+          created_at?: string
+          dtaa_article?: string | null
+          email?: string | null
+          form_10f?: boolean | null
+          id?: string
+          name?: string
+          nature_of_remittance?: string | null
+          nickname?: string
+          notes?: string | null
+          pe_in_india?: boolean | null
+          purpose_code?: string | null
+          tin?: string | null
+          trc_available?: boolean | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      remitters: {
+        Row: {
+          address: string | null
+          ao_details: string | null
+          bank_branch: string | null
+          bank_name: string | null
+          bsr_code: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          email: string | null
+          id: string
+          name: string
+          nickname: string
+          notes: string | null
+          pan: string | null
+          phone: string | null
+          pincode: string | null
+          state: string | null
+          tan: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          ao_details?: string | null
+          bank_branch?: string | null
+          bank_name?: string | null
+          bsr_code?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name: string
+          nickname: string
+          notes?: string | null
+          pan?: string | null
+          phone?: string | null
+          pincode?: string | null
+          state?: string | null
+          tan?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          ao_details?: string | null
+          bank_branch?: string | null
+          bank_name?: string | null
+          bsr_code?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string
+          nickname?: string
+          notes?: string | null
+          pan?: string | null
+          phone?: string | null
+          pincode?: string | null
+          state?: string | null
+          tan?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
