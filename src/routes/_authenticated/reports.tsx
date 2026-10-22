@@ -1,3 +1,4 @@
+import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -13,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export const Route = createFileRoute("/_authenticated/reports")({
-  head: () => ({ meta: [{ title: "Reports & billing — Form 146 Desk" }] }),
+  head: () => pageMeta("Reports & billing", "Export Form 146 records with saved custom billing formats."),
   loader: async ({ context }) => {
     await Promise.all([
       context.queryClient.ensureQueryData(formsQuery()),
@@ -26,7 +27,7 @@ export const Route = createFileRoute("/_authenticated/reports")({
 
 interface Col { key: string; header: string }
 const DEFAULT: Col[] = ["sr_no", "remitter.name", "remittee.name", "remittee_invoice_no", "filing_date", "ack_no", "udin", "certification_charges"]
-  .map((k) => ({ key: k, header: EXPORT_COLUMNS.find((c) => c.key === k)!.label }));
+  .map((k) => ({ key: k, header: EXPORT_COLUMNS.find((c) => c.key === k)?.label ?? k }));
 
 function Reports() {
   const { data: forms } = useSuspenseQuery(formsQuery());
@@ -50,7 +51,7 @@ function Reports() {
 
   function move(i: number, d: number) {
     const n = [...cols]; const j = i + d; if (j < 0 || j >= n.length) return;
-    const t = n[i]!; n[i] = n[j]!; n[j] = t; setCols(n);
+    const t = n[i], other = n[j]; if (!t || !other) return; n[i] = other; n[j] = t; setCols(n);
   }
 
   function exportFile(type: "xlsx" | "csv") {

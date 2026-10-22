@@ -1,9 +1,10 @@
+import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute } from "@tanstack/react-router";
 import { remitteesQuery } from "@/lib/queries";
 import { MasterPage } from "@/components/master-page";
 
 export const Route = createFileRoute("/_authenticated/remittees")({
-  head: () => ({ meta: [{ title: "Remittees — Form 146 Desk" }] }),
+  head: () => pageMeta("Remittees", "Maintain recipient particulars, residence details and tax documentation."),
   loader: ({ context }) => context.queryClient.ensureQueryData(remitteesQuery()),
   component: () => (
     <MasterPage title="Remittees" eyebrow="Payee master" table="remittees" query={remitteesQuery() as never}

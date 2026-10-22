@@ -1,3 +1,4 @@
+import { pageMeta } from "@/lib/page-meta";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -15,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 export const Route = createFileRoute("/_authenticated/forms/$id")({
-  head: () => ({ meta: [{ title: "Edit Form 146 — Form 146 Desk" }] }),
+  head: () => pageMeta("Edit Form 146", "Prepare Form 146 with party details, remittance calculations and tax certification fields."),
   loader: async ({ context, params }) => {
     await Promise.all([
       context.queryClient.ensureQueryData(remittersQuery()),
