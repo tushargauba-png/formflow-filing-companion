@@ -15,3 +15,5 @@
 - Form field definitions, statuses and export columns live in `src/lib/form-fields.ts`; editor, preview and exports read from there so a new field is added in one place.
 - Data reads go through react-query options in `src/lib/queries.ts` using the browser client (RLS applies); no server functions needed yet.
 - Supporting documents live in the private `form-files` storage bucket, opened via short-lived signed URLs.
+- Form-specific portal fields and editable party snapshots are stored in forms.portal_details; shared scalar amounts remain canonical for reports, and field definitions drive editor, preview and exports.
+- Remittance and gross-up calculations live in a pure tested module; explicit calculation or enabled automatic recalculation prevents silently altering historic amounts.
