@@ -8,6 +8,13 @@
       "when": 1792670916653,
       "tag": "0000_create_core_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792671045110,
+      "tag": "0001_import_historic_forms",
+      "breakpoints": true
     }
   ]
 }
