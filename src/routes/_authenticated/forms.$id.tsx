@@ -52,7 +52,7 @@ function FormEditor() {
   function copyFrom(srcId: string) {
     const src = allForms.find((x) => x.id === srcId); if (!src) return;
     const { remitter: _a, remittee: _b, ...plain } = src;
-    setF((p) => ({ ...p, ...buildCopy(plain), fy: p.fy, start_date: p.start_date }));
+    setF((p) => ({ ...p, ...buildCopy(plain), fy: p.fy ?? null, start_date: p.start_date ?? null }));
     toast.success("Details copied — update what changed");
   }
 
@@ -64,7 +64,7 @@ function FormEditor() {
       ? await supabase.from("forms").insert(payload as never).select("id").single()
       : await supabase.from("forms").update(payload as never).eq("id", id).select("id").single();
     setSaving(false);
-    if (res.error) return toast.error(res.error.message);
+    if (res.error) { toast.error(res.error.message); return; }
     await qc.invalidateQueries({ queryKey: ["forms"] });
     toast.success("Saved");
     if (isNew) navigate({ to: "/forms/$id", params: { id: res.data.id } });
@@ -73,7 +73,7 @@ function FormEditor() {
   async function remove() {
     if (!confirm("Delete this form permanently?")) return;
     const { error } = await supabase.from("forms").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     await qc.invalidateQueries({ queryKey: ["forms"] });
     navigate({ to: "/forms" });
   }
@@ -176,14 +176,14 @@ function Attachments({ formId }: { formId: string }) {
   async function upload(file: File) {
     const path = `${formId}/${Date.now()}-${file.name}`;
     const up = await supabase.storage.from("form-files").upload(path, file);
-    if (up.error) return toast.error(up.error.message);
+    if (up.error) { toast.error(up.error.message); return; }
     const { error } = await supabase.from("form_attachments").insert({ form_id: formId, file_name: file.name, storage_path: path, doc_type: docType });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     qc.invalidateQueries({ queryKey: key });
   }
   async function open(path: string) {
     const { data, error } = await supabase.storage.from("form-files").createSignedUrl(path, 300);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     window.open(data.signedUrl, "_blank");
   }
   async function del(id: string, path: string) {

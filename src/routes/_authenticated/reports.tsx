@@ -50,7 +50,7 @@ function Reports() {
 
   function move(i: number, d: number) {
     const n = [...cols]; const j = i + d; if (j < 0 || j >= n.length) return;
-    [n[i], n[j]] = [n[j], n[i]]; setCols(n);
+    const t = n[i]!; n[i] = n[j]!; n[j] = t; setCols(n);
   }
 
   function exportFile(type: "xlsx" | "csv") {
@@ -61,9 +61,9 @@ function Reports() {
   }
 
   async function saveTemplate() {
-    if (!tplName) return toast.error("Name the format first");
+    if (!tplName) { toast.error("Name the format first"); return; }
     const { error } = await supabase.from("export_templates").insert({ name: tplName, columns: cols as never });
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     qc.invalidateQueries({ queryKey: ["export_templates"] }); toast.success("Format saved"); setTplName("");
   }
   async function deleteTemplate(id: string) {

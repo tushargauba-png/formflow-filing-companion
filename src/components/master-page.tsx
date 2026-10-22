@@ -25,12 +25,12 @@ export function MasterPage({ title, eyebrow, table, query, fields, listCols }: {
 
   async function save() {
     if (!edit) return;
-    if (!edit.nickname || !edit.name) return toast.error("Nickname and name are required");
+    if (!edit["nickname"] || !edit["name"]) { toast.error("Nickname and name are required"); return; }
     const { id, created_at: _c, updated_at: _u, ...payload } = edit as Row;
     const res = id
       ? await supabase.from(table).update(payload as never).eq("id", id)
       : await supabase.from(table).insert(payload as never);
-    if (res.error) return toast.error(res.error.message);
+    if (res.error) { toast.error(res.error.message); return; }
     await qc.invalidateQueries({ queryKey: [table] });
     await qc.invalidateQueries({ queryKey: ["forms"] });
     setEdit(null);

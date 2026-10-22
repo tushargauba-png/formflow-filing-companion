@@ -37,7 +37,7 @@ function Register() {
     const src = forms.find((f) => f.id === id)!;
     const { remitter: _r, remittee: _e, ...plain } = src;
     const { data, error } = await supabase.from("forms").insert(buildCopy(plain) as never).select("id").single();
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
     await qc.invalidateQueries({ queryKey: ["forms"] });
     toast.success("Copied as new draft");
     navigate({ to: "/forms/$id", params: { id: data.id } });
